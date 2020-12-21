@@ -39,7 +39,7 @@ class DailyNewsController extends Controller
                 $results=$this->sortArraybyDateDesc($results);
             }
         }
-        if ($request->has('rating') && $request->input('rating')) {
+       else if ($request->has('rating') && $request->input('rating')) {
             if ($request->has('rating_sort') && $request->input('rating_sort') == "ASC") {
                 $results=$this->sortArraybyRatingAsc($results);
             } else if ($request->has('rating_sort') && $request->input('rating_sort') == "DESC") {
