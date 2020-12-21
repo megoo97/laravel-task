@@ -18,3 +18,4 @@ use Illuminate\Support\Facades\Hash;
 */
 
 Route::get('/dailyNews','DailyNewsController@index');
+Route::get('/dailyNews/filter','DailyNewsController@filter');

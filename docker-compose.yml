@@ -1,4 +1,7 @@
-version: '3'
+version: "3"
+networks:
+  LARADEV:
+
 services:
   web-app:
     container_name: web-app
@@ -12,7 +15,9 @@ services:
     links:
       - database
     depends_on:
-    - database
+      - database
+    networks:
+      - LARADEV
   web-server:
     container_name: web-server
     build: ./docker/nginx
@@ -24,12 +29,31 @@ services:
       - web-app
     depends_on:
       - web-app
+    networks:
+      - LARADEV
+
+  json-server:
+    container_name: json-server
+    build:
+      context: .
+      dockerfile: docker/json/Dockerfile
+    volumes:
+      - ./docker/json/server/:/var/www/html:z
+    ports:
+      - "3000:3000"
+    working_dir: /var/www/html
+    command: json-server --host 0.0.0.0 --port 3000  db.json
+    networks:
+      - LARADEV
+
   node:
     container_name: node
     image: node:13-alpine
     volumes:
       - .:/var/www/html:z
     working_dir: /var/www/html
+    networks:
+      - LARADEV
   database:
     image: mysql:8
     container_name: database
@@ -40,6 +64,8 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       - "3306:3306"
+    networks:
+      - LARADEV
     # volumes:
     # - ./docker/mysql/logs:/var/log/mysql
     # - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
@@ -50,5 +76,7 @@ services:
     ports:
       - "16379:6379"
     volumes:
-    - ./docker/redis/misc/data:/data
-    - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./docker/redis/misc/data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - LARADEV

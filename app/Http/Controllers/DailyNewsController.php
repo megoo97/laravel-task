@@ -5,25 +5,47 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Resources\DailyNewsResource;
 use Illuminate\Support\Facades\Auth;
-
 use App\Agencie;
 use App\News;
+use App\Http\Traits\DailyNewsTrait;
 
 class DailyNewsController extends Controller
 {
-    function index() {
-        // not best authantication method for api but it's solve the case of return response in blade rather than view
-        $user = Auth::user();
-        if($user == null){
-            return response()->json(401);
+    use DailyNewsTrait;
+
+    function index()
+    {
+        $client = new \GuzzleHttp\Client();
+        $response = $client->request('GET', 'http://json-server:3000/all');
+        $results = $response->getBody();
+        $results = json_decode($results, true);
+        $results = $this->flattenArray($results);
+        $results = $this->sortArraybyDateDesc($results);
+        return response()->json($results, 200, [], JSON_UNESCAPED_SLASHES);
+    }
+
+    function filter(Request $request)
+    {
+        $client = new \GuzzleHttp\Client();
+        $response = $client->request('GET', 'http://json-server:3000/all');
+        $results = $response->getBody();
+        $results = json_decode($results, true);
+        $results = $this->flattenArray($results);
+
+        if ($request->has('date') && $request->input('date')) {
+            if ($request->has('date_sort') && $request->input('date_sort') == "ASC") {
+                $results=$this->sortArraybyDateAsc($results);
+            } else if ($request->has('date_sort') && $request->input('date_sort') == "DESC") {
+                $results=$this->sortArraybyDateDesc($results);
+            }
         }
-        $agencies=Agencie::all();
-        if($agencies == null){
-            return response()->json(404);
+        if ($request->has('rating') && $request->input('rating')) {
+            if ($request->has('rating_sort') && $request->input('rating_sort') == "ASC") {
+                $results=$this->sortArraybyRatingAsc($results);
+            } else if ($request->has('rating_sort') && $request->input('rating_sort') == "DESC") {
+                $results=$this->sortArraybyRatingDesc($results);
+            }
         }
-        foreach ($agencies as $agencie) {
-            $agencie->latest_news=$agencie->latest_news();
-        }
-        return response()->json(DailyNewsResource::collection($agencies),200,[],JSON_UNESCAPED_SLASHES);
+        return response()->json($results, 200, [], JSON_UNESCAPED_SLASHES);
     }
 }
